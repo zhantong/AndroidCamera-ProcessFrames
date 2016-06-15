@@ -15,6 +15,23 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Button buttonStartPreview = (Button) findViewById(R.id.button_start_preview);
+        buttonStartPreview.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startPreview();
+            }
+        });
+        Button buttonStopPreview = (Button) findViewById(R.id.button_stop_preview);
+        buttonStopPreview.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopPreview();
+            }
+        });
+    }
+
+    public void startPreview() {
         final CameraPreview mPreview = new CameraPreview(this);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
@@ -31,6 +48,11 @@ public class MainActivity extends Activity {
                 getFragmentManager().beginTransaction().replace(R.id.camera_preview, new SettingsFragment()).addToBackStack(null).commit();
             }
         });
+    }
+
+    public void stopPreview() {
+        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        preview.removeAllViews();
     }
 
     public void onPause() {
