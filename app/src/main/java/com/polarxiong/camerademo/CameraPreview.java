@@ -9,6 +9,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback, Camera.PreviewCallback {
     private static final String TAG = "CameraPreview";
@@ -16,19 +17,29 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Camera mCamera;
 
     private static final int PROCESS_WITH_HANDLER_THREAD = 1;
+    private static final int PROCESS_WITH_QUEUE = 2;
 
-    private int processType = PROCESS_WITH_HANDLER_THREAD;
+    private int processType = PROCESS_WITH_QUEUE;
 
     private ProcessWithHandlerThread processFrameHandlerThread;
     private Handler processFrameHandler;
+
+    private ProcessWithQueue processFrameQueue;
+    private LinkedBlockingQueue<byte[]> frameQueue;
 
     public CameraPreview(Context context) {
         super(context);
         mHolder = getHolder();
         mHolder.addCallback(this);
-        if (processType == PROCESS_WITH_HANDLER_THREAD) {
-            processFrameHandlerThread = new ProcessWithHandlerThread("process frame");
-            processFrameHandler = new Handler(processFrameHandlerThread.getLooper(), processFrameHandlerThread);
+        switch (processType) {
+            case PROCESS_WITH_HANDLER_THREAD:
+                processFrameHandlerThread = new ProcessWithHandlerThread("process frame");
+                processFrameHandler = new Handler(processFrameHandlerThread.getLooper(), processFrameHandlerThread);
+                break;
+            case PROCESS_WITH_QUEUE:
+                frameQueue = new LinkedBlockingQueue<>();
+                processFrameQueue = new ProcessWithQueue(frameQueue);
+                break;
         }
     }
 
@@ -74,8 +85,17 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        if (processType == PROCESS_WITH_HANDLER_THREAD) {
-            processFrameHandler.obtainMessage(ProcessWithHandlerThread.WHAT_PROCESS_FRAME, data).sendToTarget();
+        switch (processType) {
+            case PROCESS_WITH_HANDLER_THREAD:
+                processFrameHandler.obtainMessage(ProcessWithHandlerThread.WHAT_PROCESS_FRAME, data).sendToTarget();
+                break;
+            case PROCESS_WITH_QUEUE:
+                try {
+                    frameQueue.put(data);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
     }
 
