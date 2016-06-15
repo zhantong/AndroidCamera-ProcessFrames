@@ -10,15 +10,26 @@ import android.view.SurfaceView;
 
 import java.io.IOException;
 
-public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
+public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback, Camera.PreviewCallback {
     private static final String TAG = "CameraPreview";
     private SurfaceHolder mHolder;
     private Camera mCamera;
+
+    private static final int PROCESS_WITH_HANDLER_THREAD = 1;
+
+    private int processType = PROCESS_WITH_HANDLER_THREAD;
+
+    private ProcessWithHandlerThread processFrameHandlerThread;
+    private Handler processFrameHandler;
 
     public CameraPreview(Context context) {
         super(context);
         mHolder = getHolder();
         mHolder.addCallback(this);
+        if (processType == PROCESS_WITH_HANDLER_THREAD) {
+            processFrameHandlerThread = new ProcessWithHandlerThread("process frame");
+            processFrameHandler = new Handler(processFrameHandlerThread.getLooper(), processFrameHandlerThread);
+        }
     }
 
     private void openCameraOriginal() {
@@ -41,6 +52,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     public void surfaceCreated(SurfaceHolder holder) {
         getCameraInstance();
+        mCamera.setPreviewCallback(this);
         try {
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
@@ -58,6 +70,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+    }
+
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+        if (processType == PROCESS_WITH_HANDLER_THREAD) {
+            processFrameHandler.obtainMessage(ProcessWithHandlerThread.WHAT_PROCESS_FRAME, data).sendToTarget();
+        }
     }
 
     private class CameraHandlerThread extends HandlerThread {
