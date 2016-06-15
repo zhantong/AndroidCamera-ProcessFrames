@@ -18,8 +18,9 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private static final int PROCESS_WITH_HANDLER_THREAD = 1;
     private static final int PROCESS_WITH_QUEUE = 2;
+    private static final int PROCESS_WITH_ASYNC_TASK = 3;
 
-    private int processType = PROCESS_WITH_QUEUE;
+    private int processType = PROCESS_WITH_ASYNC_TASK;
 
     private ProcessWithHandlerThread processFrameHandlerThread;
     private Handler processFrameHandler;
@@ -39,6 +40,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             case PROCESS_WITH_QUEUE:
                 frameQueue = new LinkedBlockingQueue<>();
                 processFrameQueue = new ProcessWithQueue(frameQueue);
+                break;
+            case PROCESS_WITH_ASYNC_TASK:
                 break;
         }
     }
@@ -96,6 +99,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                     e.printStackTrace();
                 }
                 break;
+            case PROCESS_WITH_ASYNC_TASK:
+                new ProcessWithAsyncTask().execute(data);
         }
     }
 
