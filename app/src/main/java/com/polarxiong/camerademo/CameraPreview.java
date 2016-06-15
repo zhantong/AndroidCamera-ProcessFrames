@@ -19,14 +19,17 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private static final int PROCESS_WITH_HANDLER_THREAD = 1;
     private static final int PROCESS_WITH_QUEUE = 2;
     private static final int PROCESS_WITH_ASYNC_TASK = 3;
+    private static final int PROCESS_WITH_THREAD_POOL = 4;
 
-    private int processType = PROCESS_WITH_ASYNC_TASK;
+    private int processType = PROCESS_WITH_THREAD_POOL;
 
     private ProcessWithHandlerThread processFrameHandlerThread;
     private Handler processFrameHandler;
 
     private ProcessWithQueue processFrameQueue;
     private LinkedBlockingQueue<byte[]> frameQueue;
+
+    private ProcessWithThreadPool processFrameThreadPool;
 
     public CameraPreview(Context context) {
         super(context);
@@ -43,6 +46,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                 break;
             case PROCESS_WITH_ASYNC_TASK:
                 break;
+            case PROCESS_WITH_THREAD_POOL:
+                processFrameThreadPool = new ProcessWithThreadPool();
         }
     }
 
@@ -101,6 +106,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                 break;
             case PROCESS_WITH_ASYNC_TASK:
                 new ProcessWithAsyncTask().execute(data);
+                break;
+            case PROCESS_WITH_THREAD_POOL:
+                processFrameThreadPool.post(data);
+                break;
         }
     }
 
