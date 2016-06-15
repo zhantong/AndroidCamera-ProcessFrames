@@ -2,6 +2,8 @@ package com.polarxiong.camerademo;
 
 import android.content.Context;
 import android.hardware.Camera;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -19,12 +21,19 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.addCallback(this);
     }
 
+    private void openCameraOriginal() {
+        try {
+            mCamera = Camera.open();
+        } catch (Exception e) {
+            Log.d(TAG, "camera is not available");
+        }
+    }
+
     public Camera getCameraInstance() {
         if (mCamera == null) {
-            try {
-                mCamera = Camera.open();
-            } catch (Exception e) {
-                Log.d(TAG, "camera is not available");
+            CameraHandlerThread mThread = new CameraHandlerThread("camera thread");
+            synchronized (mThread) {
+                mThread.openCamera();
             }
         }
         return mCamera;
@@ -49,5 +58,34 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+    }
+
+    private class CameraHandlerThread extends HandlerThread {
+        Handler mHandler;
+
+        public CameraHandlerThread(String name) {
+            super(name);
+            start();
+            mHandler = new Handler(getLooper());
+        }
+
+        synchronized void notifyCameraOpened() {
+            notify();
+        }
+
+        void openCamera() {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    openCameraOriginal();
+                    notifyCameraOpened();
+                }
+            });
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Log.w(TAG, "wait was interrupted");
+            }
+        }
     }
 }
