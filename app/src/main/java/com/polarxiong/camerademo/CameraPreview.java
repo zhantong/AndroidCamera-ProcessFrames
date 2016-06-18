@@ -16,6 +16,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder mHolder;
     private Camera mCamera;
 
+    //process frame type
     private static final int PROCESS_WITH_HANDLER_THREAD = 1;
     private static final int PROCESS_WITH_QUEUE = 2;
     private static final int PROCESS_WITH_ASYNC_TASK = 3;
@@ -23,12 +24,15 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private int processType = PROCESS_WITH_THREAD_POOL;
 
+    //HandlerThread
     private ProcessWithHandlerThread processFrameHandlerThread;
     private Handler processFrameHandler;
 
+    //Queue
     private ProcessWithQueue processFrameQueue;
     private LinkedBlockingQueue<byte[]> frameQueue;
 
+    //ThreadPool
     private ProcessWithThreadPool processFrameThreadPool;
 
     public CameraPreview(Context context) {
